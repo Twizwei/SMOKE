@@ -124,7 +124,12 @@ class SMOKELossComputation():
 
         reg_mask = targets_variables["reg_mask"].flatten()
         reg_mask = reg_mask.view(-1, 1, 1)
-        reg_mask = reg_mask.expand_as(targets_regression)
+        reg_mask = reg_mask.expand_as(targets_regression).float()
+
+        # print(predict_boxes3d["ori"])
+        # print(predict_boxes3d["dim"])
+        # print(predict_boxes3d["loc"])
+        # print(reg_mask)
 
         if self.reg_loss == "DisL1":
             reg_loss_ori = F.l1_loss(

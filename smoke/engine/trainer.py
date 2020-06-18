@@ -7,6 +7,7 @@ import torch.distributed as dist
 
 from smoke.utils.metric_logger import MetricLogger
 from smoke.utils.comm import get_world_size
+from smoke.engine.test_net import run_test
 
 
 def reduce_loss_dict(loss_dict):
@@ -54,6 +55,9 @@ def do_train(
     model.train()
     start_training_time = time.time()
     end = time.time()
+    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
+    evaluate_period = cfg.SOLVER.EVALUATE_PERIOD
+    is_val = cfg.SOLVER.IS_VAL
 
     for data, iteration in zip(data_loader, range(start_iter, max_iter)):
         data_time = time.time() - end
@@ -84,7 +88,7 @@ def do_train(
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
-        if iteration % 10 == 0 or iteration == max_iter:
+        if iteration % 20 == 0 or iteration == max_iter:
             logger.info(
                 meters.delimiter.join(
                     [
@@ -103,8 +107,12 @@ def do_train(
                 )
             )
         # fixme: do we need checkpoint_period here
-        if iteration in cfg.SOLVER.STEPS:
+        if iteration % checkpoint_period == 0 or iteration in cfg.SOLVER.STEPS:
             checkpointer.save("model_{:07d}".format(iteration), **arguments)
+        if iteration % evaluate_period == 0 and is_val:
+            run_test(cfg, model)
+            model.train()
+
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
         # todo: add evaluations here

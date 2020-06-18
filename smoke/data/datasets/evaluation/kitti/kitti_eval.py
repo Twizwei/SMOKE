@@ -5,6 +5,9 @@ import subprocess
 
 from smoke.utils.miscellaneous import mkdir
 
+from .eval import get_official_eval_result
+from .evaluate import evaluate
+
 ID_TYPE_CONVERSION = {
     0: 'Car',
     1: 'Cyclist',
@@ -32,7 +35,8 @@ def kitti_evaluation(
 def do_kitti_detection_evaluation(dataset,
                                   predictions,
                                   output_folder,
-                                  logger
+                                  logger,
+                                  eval=True
                                   ):
     predict_folder = os.path.join(output_folder, 'data')  # only recognize data
     mkdir(predict_folder)
@@ -43,16 +47,31 @@ def do_kitti_detection_evaluation(dataset,
 
         generate_kitti_3d_detection(prediction, predict_txt)
 
-    logger.info("Evaluate on KITTI dataset")
-    output_dir = os.path.abspath(output_folder)
-    os.chdir('../smoke/data/datasets/evaluation/kitti/kitti_eval')
-    label_dir = getattr(dataset, 'label_dir')
-    if not os.path.isfile('evaluate_object_3d_offline'):
-        subprocess.Popen('g++ -O3 -DNDEBUG -o evaluate_object_3d_offline evaluate_object_3d_offline.cpp', shell=True)
-    command = "./evaluate_object_3d_offline {} {}".format(label_dir, output_dir)
-    output = subprocess.check_output(command, shell=True, universal_newlines=True).strip()
-    logger.info(output)
-    os.chdir('../tools')
+    
+    if eval:
+        # logger.info("Evaluate on KITTI dataset")
+        # output_dir = os.path.abspath(output_folder)
+        # os.chdir('../smoke/data/datasets/evaluation/kitti/kitti_eval')
+        # label_dir = getattr(dataset, 'label_dir')
+        # if not os.path.isfile('evaluate_object_3d_offline'):
+        #     subprocess.Popen('g++ -O3 -DNDEBUG -o evaluate_object_3d_offline evaluate_object_3d_offline.cpp', shell=True)
+        # command = "./evaluate_object_3d_offline {} {}".format(label_dir, output_dir)
+        # output = subprocess.check_output(command, shell=True, universal_newlines=True).strip()
+        # logger.info(output)
+        # os.chdir('../tools')
+
+        logger.info("Evaluate on KITTI dataset")
+        output_dir = os.path.abspath(output_folder)
+        smoke_dir = os.getcwd()
+        print(os.getcwd())
+        os.chdir(os.path.join(smoke_dir, 'smoke/data/datasets/evaluation/kitti/'))
+        label_dir = getattr(dataset, 'label_dir')
+        eval_results = evaluate(os.path.join(smoke_dir,label_dir), os.path.join(output_dir, 'data'), label_split_file=os.path.join(smoke_dir, 'datasets/kitti/training/ImageSets/val.txt'))
+        logger.info(eval_results)
+        os.chdir(smoke_dir)
+
+
+    return
 
 
 def generate_kitti_3d_detection(prediction, predict_txt):

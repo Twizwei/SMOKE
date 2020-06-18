@@ -19,6 +19,9 @@ def compute_on_dataset(model, data_loader, device, timer=None):
             if timer:
                 timer.tic()
             output = model(images, targets)
+            # print(targets[0].fields())
+            # print(targets[0].get_field("locations"))
+            # print(output[:, 9:12])
             if timer:
                 torch.cuda.synchronize()
                 timer.toc()
@@ -28,6 +31,18 @@ def compute_on_dataset(model, data_loader, device, timer=None):
         )
     return results_dict
 
+def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
+    """
+    To gather data from multiple gpus.
+    """
+    all_predictions = comm.all_gather(predictions_per_gpu)
+    if not comm.is_main_process():
+        return
+    # merge the list of dicts
+    predictions = {}
+    for p in all_predictions:
+        predictions.update(p)
+    return predictions
 
 def inference(
         model,
@@ -48,6 +63,8 @@ def inference(
     inference_timer = Timer()
     total_timer.tic()
     predictions = compute_on_dataset(model, data_loader, device, inference_timer)
+    
+    # predictions = None
     comm.synchronize()
 
     total_time = total_timer.toc()
@@ -65,6 +82,9 @@ def inference(
             num_devices,
         )
     )
+
+    predictions = _accumulate_predictions_from_multiple_gpus(predictions)
+
     if not comm.is_main_process():
         return
 
@@ -72,3 +92,4 @@ def inference(
                     dataset=dataset,
                     predictions=predictions,
                     output_folder=output_folder, )
+    # return 

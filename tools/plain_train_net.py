@@ -17,6 +17,8 @@ from smoke.engine.trainer import do_train
 from smoke.modeling.detector import build_detection_model
 from smoke.engine.test_net import run_test
 
+"""
+python tools/plain_train_net.py --eval-only --config-file "configs/smoke_gn_vector.yaml" --ckpt ./ckpts/0607_trainval_iter60000/model_final.pth DATASETS.TEST "kitti_test" DATASETS.TEST_SPLIT "test" OUTPUT_DIR ./results/0608_test_submission"""
 
 def train(cfg, model, device, distributed):
     optimizer = make_optimizer(cfg, model)
@@ -79,6 +81,13 @@ def main(args):
         return run_test(cfg, model)
 
     distributed = comm.get_world_size() > 1
+
+    # checkpointer = DetectronCheckpointer(
+    #         cfg, model, save_dir=cfg.OUTPUT_DIR
+    #     )
+    # ckpt = cfg.MODEL.WEIGHT if args.ckpt is None else args.ckpt
+    # _ = checkpointer.load(ckpt, use_latest=args.ckpt is None)
+
     if distributed:
         model = torch.nn.parallel.DistributedDataParallel(
             model, device_ids=[comm.get_local_rank()], broadcast_buffers=False,

@@ -132,14 +132,16 @@ _C.SOLVER.BASE_LR = 0.00025
 _C.SOLVER.BIAS_LR_FACTOR = 2
 _C.SOLVER.LOAD_OPTIMIZER_SCHEDULER = True
 
-_C.SOLVER.CHECKPOINT_PERIOD = 20
-_C.SOLVER.EVALUATE_PERIOD = 20
+_C.SOLVER.CHECKPOINT_PERIOD = 2000
+_C.SOLVER.EVALUATE_PERIOD = 2000
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
 _C.SOLVER.IMS_PER_BATCH = 32
 _C.SOLVER.MASTER_BATCH = -1
+
+_C.SOLVER.IS_VAL = True
 
 # ---------------------------------------------------------------------------- #
 # Test

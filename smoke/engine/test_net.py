@@ -26,3 +26,4 @@ def run_test(cfg, model):
             output_folder=output_folder,
         )
         comm.synchronize()
+        ('inference complete!')
